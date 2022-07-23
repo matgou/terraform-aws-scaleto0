@@ -66,7 +66,7 @@ L’utilisation avec terraform :
 # Création de la lambda de start stop
 ###########################################################################
 module "scaleTo0" {
-  source    = "./modules/kapable-alb-greenlambda"
+  source    = "["github.com/matgou/terraform-aws-scaleto0"]
   stackname  = "mon_site_wordpress_recette"
   alb_listener_arn = module.alb.alb_listener_arn
 
