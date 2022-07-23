@@ -63,7 +63,8 @@ def start(event, context):
     )
     running = 0
     i = 0
-    while (i < 30):
+    while (i < 90):
+        time.sleep(1);
         try:
             response = ecs.describe_services(
                 cluster=ecs_cluster,
@@ -75,7 +76,6 @@ def start(event, context):
             print(e);
         if (running > 0):
             break
-        time.sleep(1);
         i = i + 1
 
     response = alb.set_rule_priorities(
@@ -97,6 +97,16 @@ def handler(event, context):
     if "httpMethod" in event:
         start(event, context);
         msg = "Starting application : %s" % (ecs_service)
+        print(msg);
+        headers = event["headers"]
+        return {
+        	"statusCode": 302,
+        	"statusDescription": "302 Found",
+        	"isBase64Encoded": False,
+        	"headers": {
+        	    "Location": "%s://%s%s" % (headers["x-forwarded-proto"], headers["host"], event["path"])
+        	}
+    	}
     else:
         if "Records" in event:
             CWMessage = json.loads(event["Records"][0]["Sns"]["Message"])

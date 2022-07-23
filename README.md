@@ -33,10 +33,11 @@ Voici un schéma d’architecture du fonctionnement initiale.
 ## Problématique :
 Avec cette architecture il y’a une capacité s’adapter a la charge (auto-scalling). En cas de surcharge de nouveaux containers sont lancé pour absorbé celle ci. Cependant il y a une limite « basse », il y aura toujours au moins un container lancé.
 
-## Principe du scaling to 0 
+## Principe du scaling to 0 :
 
 L’idée est de couper tous les containers Fargate et de rediriger les nouvelles requêtes HTTP/HTTPs vers une fonction lambda dont le rôle sera de relancer l’architecture.
-Démarrage du service
+
+### Démarrage du service :
 Lorsque la lambda est appelé via le loadballancer effectue les actions suivante : 
     • Modification du « desiredCount » du service ECS à 1
     • Attente que le « runningCount » du service ECS passe à 1
@@ -45,7 +46,7 @@ Lorsque la lambda est appelé via le loadballancer effectue les actions suivante
 
 Une fois le service lancé voici son schéma d’architecture avec le container lancé et la route entre l’ALB et le container relancé.
 
-Arrêt du service
+### Arrêt du service :
 
 L’arrêt du service se fait via la surveillance cloudwatch du target-group. Si il n’y a pas d’accès pendant 20minutes on envoi un ordre de mise en veille à la lambda.
 Lorsque la lambda est appelé par sns/cloudwatch, elle effectue les actions suivante :
@@ -53,7 +54,8 @@ Lorsque la lambda est appelé par sns/cloudwatch, elle effectue les actions suiv
     • Modification de l’ALB pour utiliser la règle qui redirige vers la lambda
 Ainsi les prochains accès au services déclencherons le lancement du container.
 
-Utilisation avec terraform
+## Utilisation avec terraform :
+
 L’utilisation avec terraform :
 
 ```
