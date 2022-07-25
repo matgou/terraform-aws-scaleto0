@@ -33,13 +33,15 @@ Voici la liste des composants pré-requis au module a déployer :
 | Un target-group | Il enregistre les tâches du service ECS actives ou non pour leurs router des requêtes |
 | Une règle sur le lb | Elle porte la configuration de redirection des requêtes du loadballancer vers le target-group |
 
-Voici un schéma d’architecture du fonctionnement initiale.
+Voici un schéma d’architecture du fonctionnement initial.
 
 ![SC0_architecture_d_origine](docs/SC0_architecture_d_origine.drawio.png)
 
 ## Problématique :
 
-Avec cette architecture il y’a une capacité s’adapter a la charge (auto-scalling). En cas de surcharge de nouveaux containers sont lancé pour absorbé celle ci. Cependant il y a une limite « basse », il y aura toujours au moins un container lancé.
+Avec cette architecture il y’a une capacité s’adapter à la charge (auto-scalling) managé par AWS. C'est à dire qu'en cas de surcharge de nouveaux containers sont lancés pour absorber cette dernière. Cependant il y a une limite « basse », il y aura toujours au moins un container lancé.
+
+En effet nativement AWS ne permet pas de couper tous les containers et de les relancer lorsque le trafic arrivera. C'est ce qui est proposé d'implémenter en utilisant des solutions AWS-natives. 
 
 ## Principe du scaling to 0 :
 
@@ -49,11 +51,11 @@ L’idée est de couper tous les containers Fargate et de rediriger les nouvelle
 
 ### Démarrage du service :
 
-Lorsque la lambda est appelé via le loadballancer effectue les actions suivante : 
-    • Modification du « desiredCount » du service ECS à 1
-    • Attente que le « runningCount » du service ECS passe à 1
-    • Modification de l’ALB pour ne plus utiliser la règle qui redirige vers la lambda mais la règle redirigeant vers le target-group associé au service ECS
-    • Renvoi d’un ordre 302 de refresh de la page
+Lorsque la lambda est appelé via le loadballancer effectue les actions suivantes : 
+* Modification du « desiredCount » du service ECS à 1
+* Attente que le « runningCount » du service ECS passe à 1
+* Modification de l’ALB pour ne plus utiliser la règle qui redirige vers la lambda mais la règle redirigeant vers le target-group associé au service ECS
+* Renvoi d’un ordre 302 de refresh de la page par le client pour qu'il arrive sur le "vrai" site
 
 Une fois le service lancé voici son schéma d’architecture avec le container lancé et la route entre l’ALB et le container relancé.
 
@@ -61,10 +63,11 @@ Une fois le service lancé voici son schéma d’architecture avec le container 
 
 ### Arrêt du service :
 
-L’arrêt du service se fait via la surveillance cloudwatch du target-group. Si il n’y a pas d’accès pendant 20minutes on envoi un ordre de mise en veille à la lambda.
+L’arrêt du service se fait via la surveillance cloudwatch du target-group. Si il n’y a pas d’accès pendant 20minutes (4 points à 0 consécutif) on envoi un ordre de mise en veille à la lambda.
 Lorsque la lambda est appelé par sns/cloudwatch, elle effectue les actions suivante :
-    • Modification du « desiredCount » du service ECS à 0
-    • Modification de l’ALB pour utiliser la règle qui redirige vers la lambda
+* Modification du « desiredCount » du service ECS à 0
+* Modification de l’ALB pour utiliser la règle qui redirige vers la lambda
+   
 Ainsi les prochains accès au services déclencherons le lancement du container.
 
 ![SC0_architecture_scalle_to_0_onoff](docs/SC0_architecture_scalle_to_0_onoff.drawio.png)
