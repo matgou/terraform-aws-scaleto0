@@ -4,32 +4,38 @@
 ## Introduction :
 
 AWS Fargate est un service Serverless permettant de lancer des containers docker dans le cloud public d’AWS.
-Grace a ce service on peut hébergé facilement un site web sans se préoccuper des hyperviseurs hébergement ces containers. Pour un exploitant cela signifie qu’il ne faut se soucier de la sécurité, de la tenue en charge et des mises a jours uniquement des containers.
+Grace a ce service on peut héberger facilement un site web sans se préoccuper des hyperviseurs hébergement ces containers. Pour un exploitant cela signifie qu’il ne faut se soucier de la sécurité, de la tenue en charge et des mises a jours uniquement des containers.
 
-Cependant AWS Fargate est facturé à l’heure d’utilisation, du coup avoir dans son compte AWS des tâches Fargate démarré plus longtemps qu’elles sont utilisés entraînera une facturation inutile.
-Dans le cadre d’une démarche fin-ops nous connaissons differentes possibilités pour alligner l’utilisation de service avec leurs arrets/démarage :
+Cependant AWS Fargate est facturé à l’heure d’utilisation, du coup avoir dans son compte AWS des tâches Fargate démarrées plus longtemps qu’elles ne sont utilisées entraînera une sur-facturation inutile.
+
+Dans le cadre d’une démarche fin-ops, nous connaissons differentes possibilités pour alligner l’utilisation de services avec leurs arrets/démarages :
 
 | Possibilités | Avantages | Inconvénients |
 | ------------ | --------- | ------------- |
-| Arrêt/Démarrage a heure fixe | Adapté pour les application d’entreprise (exemple ouverture de 8h à 18h) | Si le service n’est pas utilisé pendant les horaires d’ouverture il sera quand même actifs |
-| ScaleTo0 | Démarrage du service aligné sur les horaires d’utilisations | Temps de démarrage a la première utilisation |
+| Arrêt/Démarrage à heure fixe | Adapté pour les application d’entreprise (exemple ouverture de 8h à 18h) | Si le service n’est pas utilisé pendant les horaires d’ouvertures il sera quand même actif et facturé |
+| ScaleTo0 (ce projet) | Démarrage du service aligné sur les horaires d’utilisations | Temps de démarrage à la première utilisation |
 
 
 ## Notre architecture de départ :
 
-On va partir de l’hébergement d’un service simple sous ECS (le service d’orchestration de container d’AWS). Pour des raison de facilité ce service est déployé dans un « subnet public », cela permet notamment de ne pas avoir a déployer d’endpoint sur ce réseau. C’est à dire que les container utiliseront internet pour accèder aux services AWS (Centralisation des logs, registry de containers, …).
-Les composants déployés dans cette architectures sont donc les suivants :
+On va partir de l’hébergement d’un service simple sous ECS (le service d’orchestration de container d’AWS). Par exemple un blog wordpress, pour des raison de simplicité ce service est déployé dans un « subnet public », cela permet notamment de ne pas avoir a déployer d’endpoint sur ce réseau. C’est à dire que les container utiliseront internet pour accèder aux services AWS (Centralisation des logs, registry de containers, …). Mais l'implémentation dans un subnet privé (non connecté à internet) est parfaitement similaire.
+
+Voici la liste des composants pré-requis au module a déployer :
 
 | Composant | Description | 
 | --------- | ----------- |
-| Un VPC | Pour porter les composants réseau du projet |
-| Un ou plusieurs subnets publiques | Rattaché au VPC ils fournissent les adresses Ips aux composants |
-| Une gateway-internet |Pour permettre les échanges internet-subnets |
-| Un Application Load Ballancer | Pour distribuer les recettes applicatives (http et https) vers les services |
-| Un cluster ECS | Pour le supports de nos services ECS |
-| Un service ECS | Le service portant le container et son environnement d’execution |
+| Un VPC | Il porte les composants réseaux du projet |
+| Un ou plusieurs subnets publiques | Rattachés au VPC ils fournissent les adresses Ips aux composants |
+| Une gateway-internet | Elle permet les échanges internet-subnets |
+| Un Application Load Ballancer | Il distribue les requêtes applicatives (http et https) vers les services |
+| Un cluster ECS | Il porte les composants ECS du projet |
+| Un service ECS | Il décrit le container et son environnement d’execution |
+| Un target-group | Il enregistre les tâches du service ECS actives ou non pour leurs router des requêtes |
+| Une règle sur le lb | Elle porte la configuration de redirection des requêtes du loadballancer vers le target-group |
 
 Voici un schéma d’architecture du fonctionnement initiale.
+
+![SC0_architecture_d_origine](docs/SC0_architecture_d_origine.drawio.png)
 
 ## Problématique :
 
