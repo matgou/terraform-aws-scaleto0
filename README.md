@@ -39,6 +39,8 @@ Avec cette architecture il y’a une capacité s’adapter a la charge (auto-sca
 
 L’idée est de couper tous les containers Fargate et de rediriger les nouvelles requêtes HTTP/HTTPs vers une fonction lambda dont le rôle sera de relancer l’architecture.
 
+![SC0_architecture_scalle_to_0_off](docs/SC0_architecture_scalle_to_0_off.drawio.png)
+
 ### Démarrage du service :
 
 Lorsque la lambda est appelé via le loadballancer effectue les actions suivante : 
@@ -49,6 +51,8 @@ Lorsque la lambda est appelé via le loadballancer effectue les actions suivante
 
 Une fois le service lancé voici son schéma d’architecture avec le container lancé et la route entre l’ALB et le container relancé.
 
+![SC0_architecture_scalle_to_0_on](docs/SC0_architecture_scalle_to_0_on.drawio.png)
+
 ### Arrêt du service :
 
 L’arrêt du service se fait via la surveillance cloudwatch du target-group. Si il n’y a pas d’accès pendant 20minutes on envoi un ordre de mise en veille à la lambda.
@@ -56,6 +60,8 @@ Lorsque la lambda est appelé par sns/cloudwatch, elle effectue les actions suiv
     • Modification du « desiredCount » du service ECS à 0
     • Modification de l’ALB pour utiliser la règle qui redirige vers la lambda
 Ainsi les prochains accès au services déclencherons le lancement du container.
+
+![SC0_architecture_scalle_to_0_onoff](docs/SC0_architecture_scalle_to_0_onoff.drawio.png)
 
 ## Utilisation avec terraform :
 
